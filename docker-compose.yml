@@ -1,0 +1,11 @@
+services:
+  leadradar:
+    build: .
+    container_name: leadradar
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./radar.db:/app/radar.db
