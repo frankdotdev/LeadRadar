@@ -3,10 +3,11 @@
 > **Autonomous Buyer-Intent Radar & Opportunity Listener.**  
 > Continuously monitors social networks, discussion forums, job boards, and communities for high-intent buyer posts, filters out noise, scores leads with heuristics or LLMs, and delivers actionable Telegram alerts with single-click workflow triage.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
-[![SQLite WAL](https://img.shields.io/badge/SQLite-WAL%20Mode-003B57.svg)](https://www.sqlite.org)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-frankdotdev%2FLeadRadar-black?logo=github)](https://github.com/frankdotdev/LeadRadar)
+[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-black.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-black.svg)](https://fastapi.tiangolo.com)
+[![SQLite WAL](https://img.shields.io/badge/SQLite-WAL%20Mode-black.svg)](https://www.sqlite.org)
 
 ---
 
@@ -51,8 +52,8 @@ Finding high-value freelance clients and agency projects typically means manuall
 ### 1. Clone & Set Up Virtual Environment
 
 ```bash
-git clone https://github.com/your-username/leadradar.git
-cd leadradar
+git clone https://github.com/frankdotdev/LeadRadar.git
+cd LeadRadar
 
 python -m venv .venv
 
@@ -242,6 +243,9 @@ docker run -d -p 8000:8000 --env-file .env -v $(pwd)/radar.db:/app/radar.db lead
 ## Authors & Credits
 
 Built by **Frank Oge** ([frankoge.com](https://frankoge.com)) of **Hackverse Technologies** ([hackversetechnologies.vercel.app](https://hackversetechnologies.vercel.app)).
+
+- **GitHub Profile**: [@frankdotdev](https://github.com/frankdotdev)
+- **Repository**: [https://github.com/frankdotdev/LeadRadar](https://github.com/frankdotdev/LeadRadar)
 
 ---
 
