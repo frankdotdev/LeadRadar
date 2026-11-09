@@ -28,8 +28,19 @@ env/
 
 # Environment and sensitive data
 .env
+.env.*
 *.env
+*.env_*
 !.env.example
+
+# IDE Local History & Editor files (prevents leaking .env snapshots)
+.history/
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
 
 # SQLite Database & WAL
 *.db
@@ -41,11 +52,3 @@ radar.db
 *.log
 leads.csv
 export.csv
-
-# IDE & OS files
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-Thumbs.db

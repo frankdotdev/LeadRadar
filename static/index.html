@@ -19,10 +19,10 @@
 html[data-theme="dark"] {
   --bg: #0b0b0a;
   --card: #131312;
-  --card-elevated: #1a1a18;
-  --card-hover: #1e1e1c;
+  --card-elevated: #191917;
+  --card-hover: #1f1f1c;
   --line: #262623;
-  --line-light: #333330;
+  --line-light: #363632;
   --paper: #ede8de;
   --paper-dim: #cfc9be;
   --mute: #858074;
@@ -34,10 +34,10 @@ html[data-theme="dark"] {
 html[data-theme="light"] {
   --bg: #f7f5f0;
   --card: #ffffff;
-  --card-elevated: #f0ece3;
-  --card-hover: #ebe6dc;
+  --card-elevated: #f1ede4;
+  --card-hover: #eae5da;
   --line: #ded8cb;
-  --line-light: #ccc5b6;
+  --line-light: #c8c0b0;
   --paper: #141413;
   --paper-dim: #2e2d2a;
   --mute: #6e695e;
@@ -85,6 +85,10 @@ button:hover {
 button:active {
   transform: translateY(1px);
 }
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 button.pri {
   background: var(--bg-inv);
   color: var(--text-inv);
@@ -128,7 +132,7 @@ header {
   z-index: 50;
 }
 .header-inner {
-  max-width: 1100px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 14px 24px;
   display: flex;
@@ -187,7 +191,7 @@ h1 {
 
 /* Main */
 main {
-  max-width: 1100px;
+  max-width: 1120px;
   width: 100%;
   margin: 0 auto;
   padding: 24px;
@@ -197,14 +201,14 @@ main {
 /* Stats */
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 .stat {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 14px 18px;
+  padding: 14px 16px;
   background: var(--card);
   display: flex;
   flex-direction: column;
@@ -212,14 +216,14 @@ main {
 }
 .stat b {
   font-family: var(--font-serif);
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 600;
   line-height: 1.1;
   color: var(--paper);
 }
 .stat span {
   color: var(--mute);
-  font-size: 11px;
+  font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -234,6 +238,13 @@ main {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+.controls-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .status-tabs {
   display: flex;
@@ -309,14 +320,16 @@ main {
   font-size: 12px;
   color: var(--mute);
   padding: 0 2px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .stream-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
-/* Lead Card: Strictly Clean & Monochrome */
+/* Lead Card: Strictly Clean Monochrome */
 .lead {
   border: 1px solid var(--line);
   background: var(--card);
@@ -358,10 +371,11 @@ main {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
 }
 .lead-meta {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
   font-size: 12px;
@@ -372,7 +386,7 @@ main {
   font-size: 11px;
   color: var(--paper);
   background: var(--card-elevated);
-  padding: 2px 6px;
+  padding: 2px 7px;
   border: 1px solid var(--line);
   border-radius: 4px;
 }
@@ -383,6 +397,16 @@ main {
   padding: 1px 7px;
   border-radius: 4px;
 }
+.lang-tag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--paper);
+  background: var(--card-elevated);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
 .status-tag {
   margin-left: auto;
   font-family: var(--font-mono);
@@ -392,18 +416,78 @@ main {
   color: var(--mute);
 }
 
+/* Contact & Handle Bar */
+.contact-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 7px 10px;
+  background: var(--card-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+.contact-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--mute);
+}
+.contact-pill {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--paper);
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.contact-pill:hover {
+  border-color: var(--line-light);
+  background: var(--card-hover);
+}
+.email-status-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  color: var(--paper);
+  background: var(--bg);
+}
+
 .lead-text {
   font-size: 14px;
   line-height: 1.6;
   color: var(--paper);
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 110px;
+  max-height: 120px;
   overflow: hidden;
   cursor: pointer;
 }
 .lead-text.open {
   max-height: none;
+}
+.orig-text-box {
+  font-size: 12.5px;
+  color: var(--mute);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  display: none;
+}
+.orig-text-box.show {
+  display: block;
 }
 .lead-reason {
   font-size: 12.5px;
@@ -411,7 +495,49 @@ main {
   font-style: italic;
   border-left: 2px solid var(--line);
   padding-left: 10px;
+}
+
+/* Tailored Writeup Box Waiting on Every Card */
+.writeup-box {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 2px;
+}
+.writeup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.writeup-title {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--mute);
+}
+.writeup-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.writeup-actions button {
+  padding: 4px 9px;
+  font-size: 11.5px;
+}
+.writeup-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--paper-dim);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .lead-actions {
@@ -441,12 +567,12 @@ main {
 .modal-layer {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.72);
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition);
@@ -460,10 +586,10 @@ main {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   width: 100%;
-  max-width: 540px;
+  max-width: 620px;
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
+  max-height: 92vh;
   overflow: hidden;
 }
 .modal-top {
@@ -475,7 +601,7 @@ main {
 }
 .modal-title {
   font-family: var(--font-serif);
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 600;
 }
 .modal-body {
@@ -483,7 +609,7 @@ main {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 15px;
 }
 .modal-bottom {
   padding: 12px 18px;
@@ -495,10 +621,33 @@ main {
   background: var(--card-elevated);
 }
 
+.preset-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.preset-chip {
+  font-size: 11.5px;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--mute);
+  background: var(--bg);
+}
+.preset-chip:hover {
+  color: var(--paper);
+  border-color: var(--line-light);
+}
+
 .field {
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 .field-header {
   display: flex;
@@ -514,7 +663,7 @@ main {
 }
 .field textarea {
   width: 100%;
-  min-height: 80px;
+  min-height: 68px;
   resize: vertical;
 }
 
@@ -575,7 +724,7 @@ footer {
   padding: 20px 24px;
 }
 .footer-inner {
-  max-width: 1100px;
+  max-width: 1120px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -602,9 +751,10 @@ footer {
 @media(max-width: 680px) {
   .header-inner { padding: 12px 16px; }
   main { padding: 16px; }
-  .lead { grid-template-columns: 1fr; gap: 10px; }
+  .lead { grid-template-columns: 1fr; gap: 10px; padding: 14px; }
   .lead-score-box { flex-direction: row; justify-content: space-between; }
   .score-number { font-size: 26px; }
+  .field-grid { grid-template-columns: 1fr; }
   .footer-inner { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 </style>
@@ -616,7 +766,7 @@ footer {
   <div class="header-inner">
     <div class="brand-group">
       <h1>LeadRadar</h1>
-      <span class="brand-tag">Intent Listener</span>
+      <span class="brand-tag">Autonomous Intent &amp; Outreach Engine</span>
     </div>
 
     <div class="header-right">
@@ -624,6 +774,13 @@ footer {
         <span class="live-dot" id="liveDot"></span>
         <span id="liveText">connecting...</span>
       </div>
+
+      <button id="scanNowBtn" title="Trigger immediate scan across all sources">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 2v10l7 7"/>
+        </svg>
+        <span id="scanBtnTxt">Scan Now</span>
+      </button>
 
       <a href="https://github.com/frankdotdev/LeadRadar" target="_blank" rel="noopener noreferrer" style="display:inline-flex;">
         <button class="ghost" title="GitHub Repository" aria-label="GitHub Repository">
@@ -656,11 +813,11 @@ footer {
         </button>
       </a>
 
-      <button id="settingsBtn">
+      <button id="settingsBtn" class="pri">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>
         </svg>
-        Settings
+        Role &amp; Settings
       </button>
     </div>
   </div>
@@ -678,8 +835,12 @@ footer {
       <span>Hot &ge; 75</span>
     </div>
     <div class="stat">
+      <b id="sWithEmail">0</b>
+      <span>With Direct Email</span>
+    </div>
+    <div class="stat">
       <b id="sContacted">0</b>
-      <span>Contacted</span>
+      <span>Contacted / Sent</span>
     </div>
     <div class="stat">
       <b id="sWon">0</b>
@@ -689,14 +850,25 @@ footer {
 
   <!-- Controls -->
   <div class="controls">
-    <div class="status-tabs" id="statusTabs"></div>
+    <div class="controls-top">
+      <div class="status-tabs" id="statusTabs"></div>
+    </div>
 
     <div class="filters-row">
       <div class="search-wrapper">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
         </svg>
-        <input type="text" id="searchInput" placeholder="Search text, author, or keyword... (/ to focus)">
+        <input type="text" id="searchInput" placeholder="Search requests, services, @handles, emails, or translated text... (/ to focus)">
+      </div>
+
+      <div class="filter-label">
+        <label for="contactFilter">Contacts:</label>
+        <select id="contactFilter">
+          <option value="">All Leads</option>
+          <option value="email">Has Email Address</option>
+          <option value="any">Has Handle / Phone / Email</option>
+        </select>
       </div>
 
       <div class="filter-label">
@@ -716,18 +888,18 @@ footer {
   <!-- Stream Bar -->
   <div class="stream-bar">
     <span id="streamCount">Loading...</span>
-    <span id="shortcutHint">Click post text to expand</span>
+    <span>Tailored outreach writeup &amp; poster contacts are prepared automatically on each lead</span>
   </div>
 
   <!-- Leads List -->
   <div class="stream-list" id="list"></div>
 </main>
 
-<!-- Settings Modal -->
+<!-- Settings & Service Role Modal -->
 <div class="modal-layer" id="settingsModal">
   <div class="modal-window">
     <div class="modal-top">
-      <span class="modal-title">Settings</span>
+      <span class="modal-title">Target Services, Outreach Identity &amp; Settings</span>
       <button class="ghost" id="closeSettings">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
@@ -737,55 +909,117 @@ footer {
     <div class="modal-body">
       <div class="field">
         <div class="field-header">
-          <span>Monitored Keywords</span>
-          <span class="field-hint">Comma separated</span>
+          <span>Quick Role / Industry Presets</span>
+          <span class="field-hint">Click to load keywords &amp; services (or type your own below)</span>
         </div>
-        <textarea id="kwText" placeholder="e.g. website, web developer, mobile app, chatbot"></textarea>
+        <div class="preset-chips" id="presetChips"></div>
       </div>
 
       <div class="field">
         <div class="field-header">
-          <span>Negative Keywords</span>
-          <span class="field-hint">Excluded terms</span>
+          <span>Services / Roles You Offer</span>
+          <span class="field-hint">Guides AI qualification &amp; tailored writeups for any niche</span>
         </div>
-        <textarea id="ngText" placeholder="e.g. unpaid, internship, equity only, for free"></textarea>
+        <textarea id="myServicesText" style="min-height:54px" placeholder="e.g. Full-stack software dev, copywriting, Google Ads, UI/UX design, video editing..."></textarea>
       </div>
 
       <div class="field">
         <div class="field-header">
-          <span>Telegram Alert Threshold</span>
-          <span class="field-hint">Score 0 to 100</span>
+          <span>Monitored Buyer Keywords</span>
+          <span class="field-hint">Comma separated — searched across all global sources</span>
         </div>
-        <input type="number" id="alertScore" min="0" max="100" style="width:90px">
+        <textarea id="kwText" placeholder="e.g. website, web developer, copywriter, google ads, landing page, mobile app"></textarea>
+      </div>
+
+      <div class="field">
+        <div class="field-header">
+          <span>Negative Keywords (Exclude)</span>
+          <span class="field-hint">Posts containing these are dropped</span>
+        </div>
+        <textarea id="ngText" style="min-height:48px" placeholder="e.g. unpaid, internship, equity only, for free"></textarea>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <div class="field-header"><span>Sender Name</span></div>
+          <input type="text" id="senderName" placeholder="Frank Oge">
+        </div>
+        <div class="field">
+          <div class="field-header"><span>Portfolio / Website URL</span></div>
+          <input type="text" id="senderPortfolio" placeholder="https://frankoge.com">
+        </div>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <div class="field-header"><span>Company / Agency Name</span></div>
+          <input type="text" id="senderCompany" placeholder="Hackverse Technologies">
+        </div>
+        <div class="field">
+          <div class="field-header"><span>Company URL</span></div>
+          <input type="text" id="senderCompanyUrl" placeholder="https://hackversetechnologies.vercel.app">
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-header">
+          <span>Your Pitch Summary</span>
+          <span class="field-hint">Used to personalize every writeup</span>
+        </div>
+        <textarea id="myPitchText" style="min-height:52px" placeholder="Brief summary of your track record and value proposition..."></textarea>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <div class="field-header">
+            <span>Telegram Alert Score</span>
+            <span class="field-hint">0–100</span>
+          </div>
+          <input type="number" id="alertScore" min="0" max="100">
+        </div>
+        <div class="field" style="justify-content:flex-end;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;padding-bottom:6px;">
+            <input type="checkbox" id="autoEmailChk" style="width:15px;height:15px;">
+            <span>Auto-send email when address is found</span>
+          </label>
+        </div>
       </div>
 
       <div class="health-box">
         <div class="health-row">
-          <span>Groq Semantic Classifier:</span>
+          <span>AI Classifier &amp; Translator:</span>
           <span id="hLlm">-</span>
         </div>
         <div class="health-row">
-          <span>Telegram Notifications:</span>
-          <span id="hTg">-</span>
+          <span>Serper.dev Google X-Ray (X / LinkedIn / FB):</span>
+          <span id="hSerper">-</span>
         </div>
         <div class="health-row">
-          <span>Active Ingestion Sources:</span>
-          <span id="hSources">-</span>
+          <span>Hunter.io Email Enrichment:</span>
+          <span id="hHunter">-</span>
+        </div>
+        <div class="health-row">
+          <span>SMTP Auto-Email Transport:</span>
+          <span id="hSmtp">-</span>
+        </div>
+        <div class="health-row">
+          <span>Telegram Bot Alerts:</span>
+          <span id="hTg">-</span>
         </div>
       </div>
     </div>
     <div class="modal-bottom">
       <button class="ghost" id="cancelSettings">Cancel</button>
-      <button class="pri" id="kwSave">Save Settings</button>
+      <button class="pri" id="kwSave">Save &amp; Apply</button>
     </div>
   </div>
 </div>
 
-<!-- AI Reply Draft Modal -->
+<!-- Edit / Customize Writeup Modal -->
 <div class="modal-layer" id="draftModal">
   <div class="modal-window">
     <div class="modal-top">
-      <span class="modal-title">Outreach Draft</span>
+      <span class="modal-title">Edit Tailored Writeup</span>
       <button class="ghost" id="closeDraft">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
@@ -795,17 +1029,30 @@ footer {
     <div class="modal-body">
       <div class="field">
         <div class="field-header">
-          <span>Proposed Response</span>
-          <span class="field-hint">Editable</span>
+          <span>Poster &amp; Extracted Contacts</span>
+          <span class="field-hint" id="modalContactSummary"></span>
         </div>
-        <textarea id="draftText" style="min-height: 120px; line-height: 1.6; font-size: 13.5px;"></textarea>
+      </div>
+      <div class="field">
+        <div class="field-header">
+          <span>Email Subject Line</span>
+        </div>
+        <input type="text" id="draftSubjectInput">
+      </div>
+      <div class="field">
+        <div class="field-header">
+          <span>Tailored Outreach Message</span>
+          <span class="field-hint">Signed &amp; ready to send via DM or Email</span>
+        </div>
+        <textarea id="draftText" style="min-height: 150px; line-height: 1.6; font-size: 13.5px;"></textarea>
       </div>
     </div>
     <div class="modal-bottom">
+      <button id="regenModalBtn" type="button">Regenerate with AI</button>
       <a id="draftLink" href="#" target="_blank" rel="noopener">
-        <button type="button">Open Post</button>
+        <button type="button">Open Profile / Post</button>
       </a>
-      <button class="pri" id="copyDraftBtn">Copy Draft</button>
+      <button class="pri" id="copyDraftBtn">Save &amp; Copy Writeup</button>
     </div>
   </div>
 </div>
@@ -832,6 +1079,8 @@ const STATUSES = ['new', 'saved', 'contacted', 'won', 'dismissed'];
 let currentStatus = 'new';
 let searchDebounce = null;
 let currentStats = null;
+let activeDraftLeadId = null;
+let rolePresets = {};
 
 const esc = s => String(s || '').replace(/[&<>"']/g, c => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -856,7 +1105,16 @@ function toast(msg) {
     el.style.opacity = '0';
     el.style.transition = 'opacity 120ms ease';
     setTimeout(() => el.remove(), 140);
-  }, 2200);
+  }, 2600);
+}
+
+async function copyText(txt, label) {
+  try {
+    await navigator.clipboard.writeText(txt);
+    toast(label || 'Copied to clipboard');
+  } catch {
+    prompt('Copy:', txt);
+  }
 }
 
 async function api(path, opts) {
@@ -911,19 +1169,23 @@ async function loadStats() {
     currentStats = s;
     $('#sToday').textContent = s.today;
     $('#sHot').textContent = s.hot;
+    $('#sWithEmail').textContent = s.with_email || 0;
     $('#sContacted').textContent = (s.by_status && s.by_status.contacted) || 0;
     $('#sWon').textContent = (s.by_status && s.by_status.won) || 0;
 
     $('#liveDot').classList.remove('off');
     const errCount = Object.keys(s.errors || {}).length;
-    $('#liveText').textContent = `${s.sources.length} sources · ${s.llm ? 'LLM' : 'Heuristic'}${errCount ? ` · ${errCount} err` : ''}`;
+    $('#liveText').textContent = `${s.sources.length} sources · ${s.llm_provider || 'Heuristic'}${s.scanning ? ' · scanning...' : ''}${errCount ? ` · ${errCount} err` : ''}`;
+    $('#scanBtnTxt').textContent = s.scanning ? 'Scanning...' : 'Scan Now';
 
     let inactiveInfo = Object.entries(s.inactive || {}).map(([k, v]) => `${k}: ${v}`).join('\n');
-    $('#liveBox').title = `Active: ${s.sources.join(', ')}\n\nInactive:\n${inactiveInfo || 'None'}`;
+    $('#liveBox').title = `Active: ${s.sources.join(', ')}\n\nOptional / Inactive:\n${inactiveInfo || 'None'}`;
 
-    $('#hLlm').textContent = s.llm ? 'Active (Groq)' : 'Off (Heuristic)';
+    $('#hLlm').textContent = s.llm ? `Active (${s.llm_provider})` : 'Heuristic + Auto-Translate';
+    $('#hSerper').textContent = s.serper ? 'Active (X/LinkedIn/FB X-Ray)' : 'Off (set SERPER_API_KEY)';
+    $('#hHunter').textContent = s.hunter ? 'Active' : 'Off (Regex extractor active)';
+    $('#hSmtp').textContent = s.smtp ? 'Active (Auto-Email Ready)' : 'Off (1-click mailto active)';
     $('#hTg').textContent = s.telegram ? 'Connected' : 'Not configured';
-    $('#hSources').textContent = `${s.sources.length} sources running`;
 
     renderStatusTabs();
 
@@ -945,29 +1207,41 @@ async function loadStats() {
 async function loadLeads() {
   const minScore = $('#minScore').value || 0;
   const src = $('#srcSel').value || '';
+  const hasContact = $('#contactFilter').value || '';
   const q = ($('#searchInput').value || '').trim();
 
   const params = new URLSearchParams({
     status: currentStatus,
     min_score: minScore,
     source: src,
+    has_contact: hasContact,
     q: q
   });
 
   try {
     const leads = await api('/api/leads?' + params.toString());
-    $('#streamCount').textContent = `${leads.length} ${currentStatus} ${leads.length === 1 ? 'item' : 'items'}${q ? ` for "${q}"` : ''}`;
+    $('#streamCount').textContent = `${leads.length} ${currentStatus} ${leads.length === 1 ? 'lead' : 'leads'}${q ? ` matching "${q}"` : ''}`;
 
     if (!leads.length) {
       $('#list').innerHTML = `
         <div class="empty">
-          No leads in "${currentStatus}". The radar is listening across all sources.
+          No leads in "${currentStatus}". Adjust your filters, switch your service preset in Role &amp; Settings, or click Scan Now.
         </div>
       `;
       return;
     }
 
-    $('#list').innerHTML = leads.map(l => `
+    $('#list').innerHTML = leads.map(l => {
+      const hasTranslation = Boolean(l.translated_text && l.lang && l.lang !== 'en');
+      const displayPost = hasTranslation ? l.translated_text : l.text;
+      const authorDisplay = l.author || 'unknown poster';
+      const dmTargetUrl = l.author_url || l.url;
+
+      const mailtoHref = l.email
+        ? `mailto:${encodeURIComponent(l.email)}?subject=${encodeURIComponent(l.draft_subject || 'Re: ' + (l.service || 'your post'))}&body=${encodeURIComponent(l.draft || '')}`
+        : '';
+
+      return `
       <div class="lead" data-id="${l.id}">
         <div class="lead-score-box">
           <div class="score-number">${l.score}</div>
@@ -977,33 +1251,91 @@ async function loadLeads() {
         <div class="lead-body">
           <div class="lead-meta">
             <span class="source-tag">${esc(l.source)}</span>
-            ${l.author ? `<span>${esc(l.author)}</span>` : ''}
+            ${l.service ? `<span class="service-tag">${esc(l.service)}</span>` : ''}
+            ${hasTranslation ? `<span class="lang-tag" title="Automatically translated from ${esc(l.lang)}">Translated (${esc(l.lang)})</span>` : ''}
             <span>·</span>
             <span>${ago(l.posted_at || l.created_at)}</span>
-            ${l.service ? `<span class="service-tag">${esc(l.service)}</span>` : ''}
-            <span class="status-tag">${l.status}</span>
+            <span class="status-tag">${esc(l.status)}</span>
           </div>
 
-          <div class="lead-text">${esc(l.text)}</div>
+          <!-- Poster & Extracted Contacts Strip -->
+          <div class="contact-strip">
+            <span class="contact-label">Poster / Contacts:</span>
+            <button type="button" class="contact-pill" data-copy="${esc(authorDisplay)}" title="Click to copy username/handle">
+              <span>${esc(authorDisplay)}</span>
+            </button>
+            ${l.email ? `
+              <button type="button" class="contact-pill" data-copy="${esc(l.email)}" title="Click to copy email address">
+                <span>Email: ${esc(l.email)}</span>
+              </button>
+              <span class="email-status-badge">${esc(l.email_status || 'ready')}</span>
+            ` : ''}
+            ${l.phone ? `
+              <button type="button" class="contact-pill" data-copy="${esc(l.phone)}" title="Click to copy phone / WhatsApp">
+                <span>Tel/WA: ${esc(l.phone)}</span>
+              </button>
+            ` : ''}
+            <a href="${esc(dmTargetUrl)}" target="_blank" rel="noopener" style="margin-left:auto;">
+              <button type="button" class="ghost" style="padding:2px 8px;font-size:11.5px;">
+                Profile / DM &rarr;
+              </button>
+            </a>
+          </div>
+
+          <!-- Post Content (Translated if foreign) -->
+          <div class="lead-text" title="Click to expand/collapse">${esc(displayPost)}</div>
+
+          ${hasTranslation ? `
+            <div>
+              <button type="button" class="ghost" data-action="toggle-orig" style="padding:2px 8px;font-size:11px;">
+                Show Original (${esc(l.lang.toUpperCase())})
+              </button>
+              <div class="orig-text-box">${esc(l.text)}</div>
+            </div>
+          ` : ''}
 
           ${l.reason ? `<div class="lead-reason">${esc(l.reason)}</div>` : ''}
 
+          <!-- Tailored Writeup Waiting Immediately -->
+          <div class="writeup-box">
+            <div class="writeup-header">
+              <span class="writeup-title">Tailored Outreach Writeup ${l.draft_subject ? `· ${esc(l.draft_subject)}` : ''}</span>
+              <div class="writeup-actions">
+                <button type="button" class="pri" data-action="copy-writeup">
+                  Copy Writeup
+                </button>
+                <button type="button" data-action="copy-and-dm" title="Copies writeup and opens poster's profile/post to DM">
+                  Copy &amp; Open DM
+                </button>
+                ${l.email ? `
+                  <button type="button" data-action="send-email" title="Send email via SMTP or open in mail client">
+                    ${l.email_status === 'sent' ? 'Resend Email' : 'Send Email'}
+                  </button>
+                  <a href="${mailtoHref}">
+                    <button type="button" title="Open pre-filled in your default mail app">Mail App</button>
+                  </a>
+                ` : ''}
+                <button type="button" class="ghost" data-action="edit-draft">Edit / AI Rewrite</button>
+              </div>
+            </div>
+            <div class="writeup-text">${esc(l.draft || '')}</div>
+          </div>
+
           <div class="lead-actions">
             <a href="${esc(l.url)}" target="_blank" rel="noopener">
-              <button class="pri" type="button">Open Post</button>
+              <button type="button">Open Original Post</button>
             </a>
 
-            <button data-action="draft" type="button">AI Reply Draft</button>
-
             ${STATUSES.filter(s => s !== l.status).map(s => `
-              <button data-status="${s}" type="button">
-                ${s === 'new' ? 'Restore' : s.charAt(0).toUpperCase() + s.slice(1)}
+              <button data-status="${s}" type="button" class="ghost">
+                ${s === 'new' ? 'Restore' : 'Mark ' + s.charAt(0).toUpperCase() + s.slice(1)}
               </button>
             `).join('')}
           </div>
         </div>
       </div>
-    `).join('');
+      `;
+    }).join('');
 
     window._leadCache = Object.fromEntries(leads.map(l => [l.id, l]));
   } catch {
@@ -1012,6 +1344,13 @@ async function loadLeads() {
 }
 
 $('#list').onclick = async e => {
+  const copyBtn = e.target.closest('[data-copy]');
+  if (copyBtn) {
+    const val = copyBtn.dataset.copy;
+    await copyText(val, `Copied contact: ${val}`);
+    return;
+  }
+
   const textEl = e.target.closest('.lead-text');
   if (textEl) {
     textEl.classList.toggle('open');
@@ -1023,6 +1362,66 @@ $('#list').onclick = async e => {
   const id = card.dataset.id;
   const lead = (window._leadCache && window._leadCache[id]) || {};
 
+  const origToggle = e.target.closest('button[data-action="toggle-orig"]');
+  if (origToggle) {
+    const box = card.querySelector('.orig-text-box');
+    if (box) box.classList.toggle('show');
+    return;
+  }
+
+  const copyWriteupBtn = e.target.closest('button[data-action="copy-writeup"]');
+  if (copyWriteupBtn) {
+    const handleInfo = lead.author ? ` (Poster: ${lead.author})` : '';
+    await copyText(lead.draft || '', `Writeup copied${handleInfo}`);
+    return;
+  }
+
+  const copyDmBtn = e.target.closest('button[data-action="copy-and-dm"]');
+  if (copyDmBtn) {
+    await copyText(lead.draft || '', `Writeup copied — opening ${lead.author || 'post'}...`);
+    window.open(lead.author_url || lead.url, '_blank', 'noopener');
+    return;
+  }
+
+  const sendEmailBtn = e.target.closest('button[data-action="send-email"]');
+  if (sendEmailBtn) {
+    sendEmailBtn.disabled = true;
+    const prev = sendEmailBtn.textContent;
+    sendEmailBtn.textContent = 'Sending...';
+    try {
+      const res = await api(`/api/leads/${id}/email`, { method: 'POST' });
+      if (res.email_status === 'sent') {
+        toast(`Email sent to ${lead.email}`);
+      } else if (res.email_status === 'simulated') {
+        toast(`Simulated send to ${lead.email} (DRY_RUN)`);
+      } else {
+        // Fallback to opening mailto if SMTP is not set up in .env yet
+        const mailto = `mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent(lead.draft_subject || 'Re: ' + (lead.service || 'your post'))}&body=${encodeURIComponent(lead.draft || '')}`;
+        window.location.href = mailto;
+        toast('Opened in your email client (configure SMTP in .env for background auto-send)');
+      }
+      loadLeads();
+      loadStats();
+    } catch {
+      toast('Email send failed');
+    } finally {
+      sendEmailBtn.disabled = false;
+      sendEmailBtn.textContent = prev;
+    }
+    return;
+  }
+
+  const editDraftBtn = e.target.closest('button[data-action="edit-draft"]');
+  if (editDraftBtn) {
+    activeDraftLeadId = id;
+    $('#draftSubjectInput').value = lead.draft_subject || '';
+    $('#draftText').value = lead.draft || '';
+    $('#modalContactSummary').textContent = lead.contact_info || lead.author || 'No extra handle detected';
+    $('#draftLink').href = lead.author_url || lead.url || '#';
+    $('#draftModal').classList.add('open');
+    return;
+  }
+
   const statusBtn = e.target.closest('button[data-status]');
   if (statusBtn) {
     const next = statusBtn.dataset.status;
@@ -1032,32 +1431,49 @@ $('#list').onclick = async e => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: next })
       });
-      toast(`Moved to ${next}`);
+      toast(`Marked as ${next}`);
       loadLeads();
       loadStats();
     } catch {
       toast('Update failed');
     }
-    return;
   }
+};
 
-  const draftBtn = e.target.closest('button[data-action="draft"]');
-  if (draftBtn) {
-    draftBtn.disabled = true;
-    const oldText = draftBtn.textContent;
-    draftBtn.textContent = 'Writing...';
-    try {
-      const res = await api(`/api/leads/${id}/draft`, { method: 'POST' });
-      $('#draftText').value = res.draft;
-      $('#draftLink').href = lead.url || '#';
-      $('#draftModal').classList.add('open');
-    } catch {
-      toast('Could not generate draft');
-    } finally {
-      draftBtn.disabled = false;
-      draftBtn.textContent = oldText;
-    }
+$('#regenModalBtn').onclick = async () => {
+  if (!activeDraftLeadId) return;
+  const btn = $('#regenModalBtn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  try {
+    const res = await api(`/api/leads/${activeDraftLeadId}/draft`, { method: 'POST' });
+    $('#draftSubjectInput').value = res.subject || '';
+    $('#draftText').value = res.draft || '';
+    toast('Fresh writeup generated');
+    loadLeads();
+  } catch {
+    toast('Generation failed');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Regenerate with AI';
   }
+};
+
+$('#copyDraftBtn').onclick = async () => {
+  const body = $('#draftText').value;
+  const subj = $('#draftSubjectInput').value;
+  if (activeDraftLeadId) {
+    try {
+      await api(`/api/leads/${activeDraftLeadId}/draft`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ draft: body, draft_subject: subj })
+      });
+      loadLeads();
+    } catch {}
+  }
+  await copyText(body, 'Saved & copied writeup');
+  $('#draftModal').classList.remove('open');
 };
 
 $('#searchInput').oninput = () => {
@@ -1067,10 +1483,23 @@ $('#searchInput').oninput = () => {
 
 $('#minScore').onchange = () => loadLeads();
 $('#srcSel').onchange = () => loadLeads();
+$('#contactFilter').onchange = () => loadLeads();
+
 $('#refreshBtn').onclick = () => {
   loadStats();
   loadLeads();
   toast('Stream refreshed');
+};
+
+$('#scanNowBtn').onclick = async () => {
+  try {
+    $('#scanBtnTxt').textContent = 'Scanning...';
+    await api('/api/scan', { method: 'POST' });
+    toast('Background scan started across all sources');
+    setTimeout(loadStats, 1500);
+  } catch {
+    toast('Could not trigger scan');
+  }
 };
 
 window.onkeydown = e => {
@@ -1088,13 +1517,35 @@ window.onkeydown = e => {
 $('#settingsBtn').onclick = async () => {
   try {
     const s = await api('/api/settings');
+    rolePresets = s.presets || {};
+    $('#presetChips').innerHTML = Object.entries(rolePresets).map(([key, cfg]) => `
+      <button type="button" class="preset-chip" data-preset="${esc(key)}">${esc(cfg.label)}</button>
+    `).join('');
+
+    $('#myServicesText').value = s.my_services || '';
     $('#kwText').value = (s.keywords || []).join(', ');
     $('#ngText').value = (s.negatives || []).join(', ');
+    $('#senderName').value = s.sender_name || 'Frank Oge';
+    $('#senderPortfolio').value = s.sender_portfolio || 'https://frankoge.com';
+    $('#senderCompany').value = s.sender_company || 'Hackverse Technologies';
+    $('#senderCompanyUrl').value = s.sender_company_url || 'https://hackversetechnologies.vercel.app';
+    $('#myPitchText').value = s.my_pitch || '';
     $('#alertScore').value = s.alert_score || 70;
+    $('#autoEmailChk').checked = Boolean(s.auto_email);
     $('#settingsModal').classList.add('open');
   } catch {
     toast('Failed to load settings');
   }
+};
+
+$('#presetChips').onclick = e => {
+  const btn = e.target.closest('[data-preset]');
+  if (!btn) return;
+  const p = rolePresets[btn.dataset.preset];
+  if (!p) return;
+  $('#myServicesText').value = p.services;
+  $('#kwText').value = p.keywords.join(', ');
+  toast(`Loaded "${p.label}" preset — click Save & Apply`);
 };
 
 $('#closeSettings').onclick = $('#cancelSettings').onclick = () => {
@@ -1102,18 +1553,28 @@ $('#closeSettings').onclick = $('#cancelSettings').onclick = () => {
 };
 
 $('#kwSave').onclick = async () => {
-  const kws = $('#kwText').value.split(',').map(s => s.trim()).filter(Boolean);
-  const negs = $('#ngText').value.split(',').map(s => s.trim()).filter(Boolean);
-  const alertScore = parseInt($('#alertScore').value, 10) || 70;
+  const payload = {
+    keywords: $('#kwText').value.split(',').map(s => s.trim()).filter(Boolean),
+    negatives: $('#ngText').value.split(',').map(s => s.trim()).filter(Boolean),
+    alert_score: parseInt($('#alertScore').value, 10) || 70,
+    my_services: $('#myServicesText').value.trim(),
+    my_pitch: $('#myPitchText').value.trim(),
+    sender_name: $('#senderName').value.trim(),
+    sender_portfolio: $('#senderPortfolio').value.trim(),
+    sender_company: $('#senderCompany').value.trim(),
+    sender_company_url: $('#senderCompanyUrl').value.trim(),
+    auto_email: $('#autoEmailChk').checked
+  };
 
   try {
     await api('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keywords: kws, negatives: negs, alert_score: alertScore })
+      body: JSON.stringify(payload)
     });
     $('#settingsModal').classList.remove('open');
-    toast('Settings saved');
+    toast('Settings saved — triggering fresh scan');
+    api('/api/scan', { method: 'POST' }).catch(() => {});
     loadStats();
     loadLeads();
   } catch {
@@ -1123,16 +1584,6 @@ $('#kwSave').onclick = async () => {
 
 $('#closeDraft').onclick = () => {
   $('#draftModal').classList.remove('open');
-};
-
-$('#copyDraftBtn').onclick = async () => {
-  const text = $('#draftText').value;
-  try {
-    await navigator.clipboard.writeText(text);
-    toast('Draft copied');
-  } catch {
-    prompt('Copy your reply draft:', text);
-  }
 };
 
 $$('.modal-layer').forEach(m => {
