@@ -15,7 +15,11 @@ def iso(s):
 
 
 def clean(s):
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html.unescape(s or ""))).strip()
+    s = html.unescape(s or "")
+    # Preserve mailto: email links and anchor URLs before stripping HTML tags
+    s = re.sub(r'href=["\']mailto:([^"\'?\s>]+)["\']', r" \1 ", s, flags=re.I)
+    s = re.sub(r'<a[^>]+href=["\'](https?://[^"\'>\s]+)["\'][^>]*>(.*?)</a>', r"\2 (\1) ", s, flags=re.I | re.S)
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", s)).strip()
 
 
 def envlist(k):
@@ -202,18 +206,16 @@ class Bluesky(Source):
 
 class Mastodon(Source):
     name = "mastodon"
-    interval = 70
+    interval = 90
     TAGS = envlist("MASTODON_TAGS") or [
-        "hiring", "forhire", "freelance", "getfedihired", "fedihired", "jobs", "remotejobs",
-        "techjobs", "webdev", "needadeveloper", "needadesigner", "copywriting", "marketing", "startup", "indiedev"
+        "hiring", "forhire", "freelance", "getfedihired", "jobs", "remotejobs", "webdev", "copywriting"
     ]
     INSTANCES = envlist("MASTODON_INSTANCES") or [
-        "mastodon.social", "fosstodon.org", "hachyderm.io", "indieweb.social", "mas.to",
-        "techhub.social", "infosec.exchange", "mastodon.de", "piaille.fr", "mstdn.jp"
+        "mastodon.social", "fosstodon.org", "hachyderm.io", "indieweb.social"
     ]
 
     async def fetch(self, kws):
-        jobs = [http.get(f"https://{i}/api/v1/timelines/tag/{t}", params={"limit": 30}) for i in self.INSTANCES for t in self.TAGS]
+        jobs = [http.get(f"https://{i}/api/v1/timelines/tag/{t}", params={"limit": 25}) for i in self.INSTANCES[:4] for t in self.TAGS[:6]]
         out = []
         for r in await asyncio.gather(*jobs, return_exceptions=True):
             if isinstance(r, Exception) or r.status_code != 200:
@@ -271,34 +273,42 @@ class SerperXRay(Source):
 
     def _build_queries(self, kws: list[str]) -> list[tuple[str, str]]:
         top = [k for k in (kws or []) if k][:6] or ["developer", "designer", "copywriter", "google ads"]
-        # Keep queries concise (under 18 words) so Google X-Ray returns maximum results
-        k1 = " OR ".join(f'"{k}"' for k in top[:3])
-        k2 = " OR ".join(f'"{k}"' for k in (top[3:6] if len(top) > 3 else top[:3]))
+        kw1 = top[0] if len(top) > 0 else "developer"
+        kw2 = top[1] if len(top) > 1 else "website"
+        kw3 = top[2] if len(top) > 2 else "mobile app"
+        kw4 = top[3] if len(top) > 3 else "copywriter"
 
         return [
-            # X / Twitter
-            ("x/xray", f'site:x.com ("looking for a" OR "need a" OR "hiring a") ({k1})'),
-            ("x/xray", f'site:x.com ("who can build" OR "anyone recommend" OR "dm your portfolio") ({k2})'),
-            # LinkedIn Posts
-            ("linkedin/xray", f'site:linkedin.com/posts ("looking for" OR "hiring" OR "freelance") ({k1})'),
-            ("linkedin/xray", f'site:linkedin.com/feed/update ("looking for" OR "hiring" OR "need a") ({k2})'),
+            # X / Twitter (both x.com and twitter.com)
+            ("x/xray", f'site:x.com "looking for a" ("{kw1}" OR "{kw2}" OR "freelancer" OR "developer")'),
+            ("x/xray", f'site:twitter.com "looking for a" ("{kw1}" OR "{kw3}" OR "designer" OR "agency")'),
+            ("x/xray", f'site:x.com ("need someone to build" OR "hiring a freelance" OR "drop your portfolio")'),
             # Facebook Public Posts & Groups
-            ("facebook/xray", f'site:facebook.com ("looking for a" OR "need someone" OR "anyone recommend") ({k1})'),
+            ("facebook/xray", f'site:facebook.com "looking for a" ("{kw1}" OR "{kw2}" OR "web developer" OR "designer")'),
+            ("facebook/xray", f'site:facebook.com/groups ("looking for" OR "need someone" OR "hiring") ("{kw1}" OR "{kw3}" OR "website")'),
+            # LinkedIn Posts
+            ("linkedin/xray", f'site:linkedin.com/posts ("looking for a" OR "hiring a freelance") ("{kw1}" OR "{kw2}" OR "{kw4}")'),
+            ("linkedin/xray", f'site:linkedin.com/posts ("drop your portfolio" OR "send your portfolio" OR "need a freelancer")'),
             # Meta Threads (threads.net & threads.com)
-            ("threads/xray", f'(site:threads.net OR site:threads.com) ("looking for" OR "need a" OR "hiring") ({k1})'),
+            ("threads/xray", f'site:threads.net ("looking for a" OR "need a" OR "hiring") ("{kw1}" OR "developer" OR "designer" OR "editor")'),
+            ("threads/xray", f'site:threads.com ("looking for a" OR "need a" OR "hiring") ("{kw1}" OR "developer" OR "designer")'),
             # Notion Briefs & Google Forms Applications
-            ("briefs/xray", f'(site:notion.site OR site:docs.google.com/forms) ("hiring" OR "looking for" OR "freelance") ({k1})'),
+            ("briefs/xray", f'site:notion.site ("hiring" OR "looking for" OR "project brief") ("{kw1}" OR "{kw2}" OR "freelance")'),
             # Europe & LATAM Multilingual (Spanish, French, German, Portuguese)
-            ("global/europe-latam", f'(site:x.com OR site:linkedin.com/posts) ("busco" OR "necesito" OR "je cherche" OR "ich suche" OR "procuro") (developer OR designer OR freelancer OR web OR app OR marketing)'),
+            ("global/europe-latam", f'("busco desarrollador" OR "necesito programador" OR "je cherche un développeur" OR "ich suche entwickler" OR "procuro freelancer")'),
             # China & Asia Multilingual
-            ("global/asia", f'(site:x.com OR site:v2ex.com OR site:threads.net) ("外包" OR "招募" OR "寻找开发" OR "远程" OR "hiring remote")'),
+            ("global/asia", f'("寻找开发" OR "外包项目" OR "远程开发" OR "急招远程" OR "hiring remote developer asia")'),
         ]
 
     async def _one_query(self, label: str, q: str, key: str) -> list[dict]:
+        payload = {"q": q, "num": 15}
+        tbs = os.getenv("SERPER_TBS", "qdr:m").strip()
+        if tbs:
+            payload["tbs"] = tbs
         r = await http.post(
             "https://google.serper.dev/search",
             headers={"X-API-KEY": key, "Content-Type": "application/json"},
-            json={"q": q, "num": 15, "tbs": os.getenv("SERPER_TBS", "qdr:w")},
+            json=payload,
             timeout=18,
         )
         if r.status_code != 200:
@@ -729,22 +739,19 @@ def inactive():
 
 def build_sources():
     s = [
+        SerperXRay(),
+        SocialWebXRay(),
         HackerNews(),
         Reddit(),
         Bluesky(),
         Mastodon(),
         Freelancer(),
+        V2EX(),
+        TelegramChannels(),
+        RSS(),
         Lemmy(),
         Nairaland(),
-        V2EX(),
-        SocialWebXRay(),
     ]
-    if os.getenv("SERPER_API_KEY"):
-        s.append(SerperXRay())
-    if envlist("TG_CHANNELS") or envlist("TG_JOB_CHANNELS"):
-        s.append(TelegramChannels())
-    if envlist("RSS_FEEDS"):
-        s.append(RSS())
     if os.getenv("X_BEARER_TOKEN"):
         s.append(X())
     return s + apify_sources()
