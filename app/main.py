@@ -30,40 +30,44 @@ async def ingest(src, posts):
     ]
     if not cand:
         return
-    verdicts = await asyncio.gather(*[filters.classify(p["text"], kws, p.get("author", "")) for p in cand])
-    for p, v in zip(cand, verdicts):
-        if v["score"] < MIN_STORE:
-            continue
-        fp = filters.fingerprint(p["text"])
-        if db.fp_exists(fp):
-            continue
-        contacts = await enrichment.enrich_lead(p)
-        email_addr = contacts.get("email", "")
-        email_status = "ready" if email_addr else ""
+    # Process in manageable batches of 10 so AI rate limits stay smooth and every lead gets deep AI analysis
+    for i in range(0, len(cand), 10):
+        batch = cand[i:i + 10]
+        verdicts = await asyncio.gather(*[filters.classify(p["text"], kws, p.get("author", "")) for p in batch])
+        for p, v in zip(batch, verdicts):
+            if v["score"] < MIN_STORE:
+                continue
+            fp = filters.fingerprint(p["text"])
+            if db.fp_exists(fp):
+                continue
+            contacts = await enrichment.enrich_lead(p)
+            email_addr = contacts.get("email", "")
+            email_status = "ready" if email_addr else ""
 
-        lead = {
-            **p,
-            "text": p["text"][:2000],
-            **v,
-            **contacts,
-            "email_status": email_status,
-            "fp": fp,
-        }
-        lead["id"] = db.insert_lead(lead)
-        if not lead["id"]:
-            continue
-        state["found"] += 1
+            lead = {
+                **p,
+                "text": p["text"][:2000],
+                **v,
+                **contacts,
+                "email_status": email_status,
+                "fp": fp,
+            }
+            lead["id"] = db.insert_lead(lead)
+            if not lead["id"]:
+                continue
+            state["found"] += 1
 
-        # Auto-send email if email was found and auto_email is enabled
-        if email_addr and db.get("auto_email") and v["score"] >= AUTO_EMAIL_MIN_SCORE:
-            sent_st = await enrichment.send_lead_email(lead)
-            lead["email_status"] = sent_st
+            if email_addr and db.get("auto_email") and v["score"] >= AUTO_EMAIL_MIN_SCORE:
+                sent_st = await enrichment.send_lead_email(lead)
+                lead["email_status"] = sent_st
 
-        if v["score"] >= db.get("alert_score"):
-            await notify.send_lead(lead)
+            if v["score"] >= db.get("alert_score"):
+                await notify.send_lead(lead)
 
 
 async def run_source(src):
+    # Stagger initial startup slightly so sources don't all hit the network in the same millisecond
+    await asyncio.sleep(0.2)
     while True:
         try:
             await ingest(src, await src.fetch(db.get("keywords")))
@@ -75,18 +79,21 @@ async def run_source(src):
 
 
 def _backfill_existing_leads():
-    """Ensure any pre-existing leads in radar.db have extracted contacts and an immediate tailored writeup."""
+    """Upgrade any pre-existing leads in radar.db that lack drafts or still have old generic 'Project Request' text."""
     c = db.conn()
     kws = db.get("keywords") or []
-    rows = c.execute("SELECT * FROM leads WHERE draft IS NULL OR draft = '' LIMIT 200").fetchall()
+    rows = c.execute(
+        "SELECT * FROM leads WHERE draft IS NULL OR draft = '' OR draft LIKE '%regarding Project Request%' OR service = 'Project Request' LIMIT 500"
+    ).fetchall()
     for r in rows:
         d = dict(r)
+        text = d.get("translated_text") or d.get("text") or ""
         emails = enrichment.extract_emails(d.get("text", ""))
         phones = enrichment.extract_phones(d.get("text", ""))
         handles, domains = enrichment.extract_handles_and_domains(d.get("text", ""))
         au, au_url = enrichment.build_author_info(d.get("source", ""), d.get("author", ""), d.get("url", ""), d.get("text", ""))
-        em = emails[0] if emails else ""
-        ph = phones[0] if phones else ""
+        em = emails[0] if emails else (d.get("email") or "")
+        ph = phones[0] if phones else (d.get("phone") or "")
         parts = []
         if au:
             parts.append(f"User: {au}")
@@ -100,20 +107,61 @@ def _backfill_existing_leads():
         for dm in domains:
             parts.append(f"Web: {dm}")
         contact_info = " · ".join(parts)
-        subj, body = filters.heuristic_draft(d.get("text", ""), au, d.get("service", ""), kws)
+        service, subj, body = filters.build_specific_draft(text, au, kws)
+        info = filters.analyze_post_details(text, kws)
+        reason = d.get("reason") or ""
+        if not reason or "heuristic" in reason.lower():
+            reason_parts = [f"Request for {info['headline'][:55]}"]
+            if info["tech_list"]:
+                reason_parts.append(f"Skills: {', '.join(info['tech_list'][:3])}")
+            reason = " · ".join(reason_parts)[:200]
         em_status = d.get("email_status") or ("ready" if em else "")
         c.execute(
             """UPDATE leads SET author=?, author_url=?, email=?, phone=?, contact_info=?,
-               draft_subject=?, draft=?, email_status=? WHERE id=?""",
-            (au, au_url, em, ph, contact_info, subj, body, em_status, d["id"]),
+               service=?, reason=?, draft_subject=?, draft=?, email_status=? WHERE id=?""",
+            (au, au_url, em, ph, contact_info, service, reason, subj, body, em_status, d["id"]),
         )
+
+
+async def _background_ai_refiner():
+    """Progressively translate non-English existing leads and refine top leads with AI in the background."""
+    await asyncio.sleep(3)
+    c = db.conn()
+    kws = db.get("keywords") or []
+    rows = c.execute("SELECT * FROM leads WHERE status='new' ORDER BY created_at DESC LIMIT 40").fetchall()
+    for r in rows:
+        d = dict(r)
+        text = d.get("text") or ""
+        # Auto-translate if non-ASCII foreign script and not yet translated
+        if not d.get("translated_text") and filters.NON_ASCII.search(text):
+            lang, trans = await filters.translate_free(text)
+            if trans:
+                service, subj, body = filters.build_specific_draft(trans, d.get("author", ""), kws)
+                c.execute(
+                    "UPDATE leads SET lang=?, translated_text=?, service=?, draft_subject=?, draft=? WHERE id=?",
+                    (lang, trans, service, subj, body, d["id"]),
+                )
+                d["translated_text"] = trans
+                d["lang"] = lang
+        # Also upgrade writeup with AI if LLM is active and lead is high score
+        if filters.active_llm_provider() and d.get("score", 0) >= 65:
+            res = await filters.draft_reply(d)
+            if res.get("draft"):
+                c.execute(
+                    "UPDATE leads SET draft=?, draft_subject=? WHERE id=?",
+                    (res["draft"], res["subject"], d["id"]),
+                )
+        await asyncio.sleep(1.2)
 
 
 @asynccontextmanager
 async def lifespan(_):
     db.init()
     _backfill_existing_leads()
-    tasks = [asyncio.create_task(run_source(s)) for s in SOURCES] + [asyncio.create_task(notify.poll())]
+    tasks = (
+        [asyncio.create_task(run_source(s)) for s in SOURCES]
+        + [asyncio.create_task(notify.poll()), asyncio.create_task(_background_ai_refiner())]
+    )
     yield
     for t in tasks:
         t.cancel()
@@ -142,9 +190,9 @@ def leads(status: str = "", source: str = "", min_score: int = 0, q: str = "", h
     elif has_contact == "any":
         sql += " AND (email != '' OR phone != '' OR author != '')"
     if q:
-        sql += " AND (text LIKE ? OR translated_text LIKE ? OR service LIKE ? OR author LIKE ? OR contact_info LIKE ?)"
+        sql += " AND (text LIKE ? OR translated_text LIKE ? OR service LIKE ? OR author LIKE ? OR contact_info LIKE ? OR draft LIKE ?)"
         pat = f"%{q}%"
-        a.extend([pat, pat, pat, pat, pat])
+        a.extend([pat, pat, pat, pat, pat, pat])
     return [dict(r) for r in db.conn().execute(sql + " ORDER BY created_at DESC LIMIT ?", a + [limit])]
 
 
@@ -207,7 +255,9 @@ async def trigger_scan():
         state["scanning"] = True
         try:
             kws = db.get("keywords")
-            for s in SOURCES:
+            # Run social & X-Ray sources first so X, LinkedIn, Facebook, Threads & V2EX populate immediately
+            ordered = sorted(SOURCES, key=lambda x: 0 if x.name in ("serper", "social_xray", "v2ex") else 1)
+            for s in ordered:
                 try:
                     await ingest(s, await s.fetch(kws))
                     state["errors"].pop(s.name, None)
@@ -227,7 +277,16 @@ def stats():
     by = {r[0]: r[1] for r in c.execute("SELECT status,COUNT(*) FROM leads GROUP BY status")}
     with_email = c.execute("SELECT COUNT(*) FROM leads WHERE email != ''").fetchone()[0]
     emailed = c.execute("SELECT COUNT(*) FROM leads WHERE email_status IN ('sent','simulated')").fetchone()[0]
+    by_src = {
+        r[0]: r[1]
+        for r in c.execute("SELECT substr(source,1,instr(source||'/','/')-1),COUNT(*) FROM leads GROUP BY 1")
+    }
     llm_name = filters.active_llm_provider()
+    # Combine active connector names + distinct lead source prefixes for the UI filter dropdown
+    ui_sources = list(dict.fromkeys(
+        ["x", "linkedin", "facebook", "threads", "reddit", "hackernews", "bluesky", "mastodon", "freelancer", "v2ex", "telegram", "rss", "nairaland", "lemmy", "global", "briefs"]
+        + list(by_src.keys())
+    ))
     return {
         "by_status": by,
         "total": sum(by.values()),
@@ -235,17 +294,15 @@ def stats():
         "hot": c.execute("SELECT COUNT(*) FROM leads WHERE score>=75 AND status='new'").fetchone()[0],
         "with_email": with_email,
         "emailed": emailed,
-        "by_source": {
-            r[0]: r[1]
-            for r in c.execute("SELECT substr(source,1,instr(source||'/','/')-1),COUNT(*) FROM leads GROUP BY 1")
-        },
+        "by_source": by_src,
         "last_run": state["last_run"],
         "errors": state["errors"],
         "scanning": state["scanning"],
         "sources": [s.name for s in SOURCES],
+        "ui_sources": ui_sources,
         "inactive": inactive(),
         "llm": bool(llm_name),
-        "llm_provider": llm_name or "Heuristic",
+        "llm_provider": llm_name or "Smart Heuristic",
         "telegram": bool(os.getenv("TELEGRAM_BOT_TOKEN") and notify.chat_id()),
         "serper": bool(os.getenv("SERPER_API_KEY")),
         "hunter": bool(os.getenv("HUNTER_API_KEY")),

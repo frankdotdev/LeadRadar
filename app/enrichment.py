@@ -109,17 +109,25 @@ def build_author_info(source: str, author: str, url: str, text: str) -> tuple[st
     # Try extracting username from URL if author is missing
     if not au:
         if "x.com/" in u or "twitter.com/" in u:
-            m = re.search(r"(?:x|twitter)\.com/([A-Za-z0-9_]{1,25})(?:/status/|$)", u, re.I)
-            if m and m.group(1).lower() not in ("i", "intent", "search", "home", "explore"):
+            m = re.search(r"(?:x|twitter)\.com/([A-Za-z0-9_]{1,25})(?:/status/|$|\?)", u, re.I)
+            if m and m.group(1).lower() not in ("i", "intent", "search", "home", "explore", "hashtag"):
                 au = f"@{m.group(1)}"
+        elif "threads.net/" in u or "threads.com/" in u:
+            m = re.search(r"threads\.(?:net|com)/@?([A-Za-z0-9_.\-]{1,30})", u, re.I)
+            if m:
+                au = f"@{m.group(1).lstrip('@')}"
+        elif "linkedin.com/" in u:
+            m = re.search(r"linkedin\.com/(?:in|posts)/([A-Za-z0-9_\-]+)", u, re.I)
+            if m:
+                au = m.group(1).split("_")[0]
+        elif "facebook.com/" in u:
+            m = re.search(r"facebook\.com/(?:groups/[^/]+/posts/|people/|profile\.php\?id=)?([A-Za-z0-9.\-_]+)", u, re.I)
+            if m and m.group(1).lower() not in ("posts", "share", "permalink.php", "watch", "events", "groups"):
+                au = m.group(1)
         elif "reddit.com/" in u:
             m = re.search(r"reddit\.com/user/([A-Za-z0-9_\-]+)", u, re.I)
             if m:
                 au = f"u/{m.group(1)}"
-        elif "linkedin.com/in/" in u:
-            m = re.search(r"linkedin\.com/in/([A-Za-z0-9_\-]+)", u, re.I)
-            if m:
-                au = m.group(1)
         elif "t.me/" in u:
             m = re.search(r"t\.me/(?:s/)?([A-Za-z0-9_]+)", u, re.I)
             if m:
@@ -137,6 +145,10 @@ def build_author_info(source: str, author: str, url: str, text: str) -> tuple[st
         author_url = f"https://x.com/{clean_au}"
         if not au.startswith("@"):
             au = f"@{clean_au}"
+    elif ("threads" in src or "threads.net" in u or "threads.com" in u) and clean_au:
+        author_url = f"https://www.threads.net/@{clean_au}"
+        if not au.startswith("@"):
+            au = f"@{clean_au}"
     elif src == "bluesky" and clean_au:
         author_url = f"https://bsky.app/profile/{clean_au}"
         if not au.startswith("@"):
@@ -147,6 +159,8 @@ def build_author_info(source: str, author: str, url: str, text: str) -> tuple[st
             au = f"@{clean_au}"
     elif src.startswith("nairaland") and clean_au:
         author_url = f"https://www.nairaland.com/{clean_au}"
+    elif src.startswith("v2ex") and clean_au:
+        author_url = f"https://www.v2ex.com/member/{clean_au}"
     elif src == "hackernews" and clean_au:
         author_url = f"https://news.ycombinator.com/user?id={clean_au}"
 

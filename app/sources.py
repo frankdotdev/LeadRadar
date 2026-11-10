@@ -1,9 +1,9 @@
-"""Add a source = subclass Source, implement fetch(kws) -> list of normalized dicts, append to build_sources()."""
+"""Global multi-platform & multilingual ingestion sources (Americas, Europe, China, Asia, Africa + X, LinkedIn, Facebook, Meta Threads)."""
 import os, re, time, html, asyncio, itertools, json
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from email.utils import parsedate_to_datetime
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 from .net import http
 
 
@@ -68,7 +68,7 @@ class HackerNews(Source):
 
     async def fetch(self, kws):
         top = (kws or ["developer", "freelancer", "designer"])[:5]
-        qs = [f"looking for {k}" for k in top[:3]] + [f"hire {k}" for k in top[:3]]
+        qs = [f"looking for {k}" for k in top[:3]] + [f"hire {k}" for k in top[:3]] + ["need a freelancer", "looking for agency"]
         rs = await asyncio.gather(
             *[
                 http.get(
@@ -103,7 +103,8 @@ class Reddit(Source):
         "forhire", "HireAWriter", "DesignJobs", "jobbit", "slavelabour", "DoneDirtCheap", "hiring",
         "startups", "Entrepreneur", "smallbusiness", "SideProject", "SaaS", "webdev", "reactjs",
         "nextjs", "node", "Python", "shopify", "ecommerce", "wordpress", "Automate", "AI_Agents",
-        "LocalLLaMA", "marketing", "PPC", "SEO", "copywriting", "VideoEditing", "freelance", "nigeria", "lagos"
+        "LocalLLaMA", "marketing", "PPC", "SEO", "copywriting", "VideoEditing", "freelance",
+        "nigeria", "lagos", "ukjobs", "freelance_de", "buhaydigital", "developersIndia", "brdev"
     ]
 
     async def one(self, sub):
@@ -124,28 +125,30 @@ class Reddit(Source):
         return parse_feed(r.text, f"reddit/r/{sub}") if r.status_code == 200 else []
 
     async def search_global(self, kws):
-        """Global Reddit search across all subreddits for the user's configured services/keywords."""
-        top = (kws or [])[:4]
-        if not top:
-            return []
-        q = f'("hiring" OR "looking for" OR "need a") ({" OR ".join(f"{k}" for k in top)})'
-        r = await http.get(
-            "https://www.reddit.com/search.json",
-            params={"q": q, "sort": "new", "t": "day", "limit": 40},
-        )
-        if r.status_code != 200:
-            return []
-        return [
-            {
-                "uid": f"rd:{d['id']}",
-                "source": f"reddit/r/{d.get('subreddit', 'search')}",
-                "author": d.get("author", ""),
-                "url": "https://reddit.com" + d.get("permalink", ""),
-                "text": f"{d.get('title','')}\n{d.get('selftext','')}",
-                "posted_at": d.get("created_utc", time.time()),
-            }
-            for d in (c["data"] for c in r.json().get("data", {}).get("children", []))
+        """Global Reddit search across all subreddits worldwide."""
+        top = (kws or ["developer", "designer", "copywriter"])[:5]
+        queries = [
+            f'("hiring" OR "looking for") ({ " OR ".join(top[:3]) })',
+            f'("need a" OR "anyone recommend") ({ " OR ".join(top[2:5] or top[:2]) })',
         ]
+        out = []
+        for q in queries:
+            r = await http.get(
+                "https://www.reddit.com/search.json",
+                params={"q": q, "sort": "new", "t": "week", "limit": 35},
+            )
+            if r.status_code == 200:
+                for c in r.json().get("data", {}).get("children", []):
+                    d = c["data"]
+                    out.append({
+                        "uid": f"rd:{d['id']}",
+                        "source": f"reddit/r/{d.get('subreddit', 'search')}",
+                        "author": d.get("author", ""),
+                        "url": "https://reddit.com" + d.get("permalink", ""),
+                        "text": f"{d.get('title','')}\n{d.get('selftext','')}",
+                        "posted_at": d.get("created_utc", time.time()),
+                    })
+        return out
 
     async def fetch(self, kws):
         jobs = [self.one(s) for s in self.SUBS] + [self.search_global(kws)]
@@ -167,6 +170,8 @@ class Bluesky(Source):
             if r.status_code == 200:
                 h = {"Authorization": "Bearer " + r.json()["accessJwt"]}
         base = "https://bsky.social" if h else "https://public.api.bsky.app"
+        # Include English + multilingual queries on Bluesky
+        search_qs = phrases(kws, 4) + ["busco desarrollador", "cherche freelance", "looking for freelancer"]
         rs = await asyncio.gather(
             *[
                 http.get(
@@ -174,7 +179,7 @@ class Bluesky(Source):
                     headers=h,
                     params={"q": q, "sort": "latest", "limit": 30},
                 )
-                for q in phrases(kws, 4)
+                for q in search_qs
             ],
             return_exceptions=True,
         )
@@ -203,11 +208,12 @@ class Mastodon(Source):
         "techjobs", "webdev", "needadeveloper", "needadesigner", "copywriting", "marketing", "startup", "indiedev"
     ]
     INSTANCES = envlist("MASTODON_INSTANCES") or [
-        "mastodon.social", "fosstodon.org", "hachyderm.io", "indieweb.social", "mas.to", "techhub.social", "infosec.exchange"
+        "mastodon.social", "fosstodon.org", "hachyderm.io", "indieweb.social", "mas.to",
+        "techhub.social", "infosec.exchange", "mastodon.de", "piaille.fr", "mstdn.jp"
     ]
 
     async def fetch(self, kws):
-        jobs = [http.get(f"https://{i}/api/v1/timelines/tag/{t}", params={"limit": 35}) for i in self.INSTANCES for t in self.TAGS]
+        jobs = [http.get(f"https://{i}/api/v1/timelines/tag/{t}", params={"limit": 30}) for i in self.INSTANCES for t in self.TAGS]
         out = []
         for r in await asyncio.gather(*jobs, return_exceptions=True):
             if isinstance(r, Exception) or r.status_code != 200:
@@ -222,6 +228,177 @@ class Mastodon(Source):
                     "posted_at": iso(s["created_at"]),
                 })
         return out
+
+
+class V2EX(Source):
+    """V2EX (China & Asia largest developer, startup & outsourcing community) — Free JSON API."""
+    name = "v2ex"
+    interval = 180
+    need_intent = False  # Posts in jobs/outsourcing/create nodes are already project/role requests
+
+    async def _node(self, node: str) -> list[dict]:
+        r = await http.get(f"https://www.v2ex.com/api/topics/show.json", params={"node_name": node}, timeout=15)
+        if r.status_code != 200 or not isinstance(r.json(), list):
+            return []
+        out = []
+        for t in r.json():
+            tid = t.get("id")
+            title = clean(t.get("title") or "")
+            body = clean(t.get("content") or "")
+            member = (t.get("member") or {}).get("username") or ""
+            out.append({
+                "uid": f"v2ex:{tid}",
+                "source": f"v2ex/{node}",
+                "author": member,
+                "url": t.get("url") or f"https://www.v2ex.com/t/{tid}",
+                "text": f"{title}\n{body}",
+                "posted_at": t.get("created", time.time()),
+                "trusted": node in ("jobs", "outsourcing"),
+            })
+        return out
+
+    async def fetch(self, kws):
+        nodes = ["jobs", "outsourcing", "career", "create"]
+        rs = await asyncio.gather(*[self._node(n) for n in nodes], return_exceptions=True)
+        return [p for r in rs if not isinstance(r, Exception) for p in r]
+
+
+class SerperXRay(Source):
+    """Google X-Ray Search via Serper.dev across X/Twitter, LinkedIn, Facebook, Meta Threads, Notion Briefs, Europe, Asia & Americas."""
+    name = "serper"
+    interval = int(os.getenv("SERPER_INTERVAL", "240"))
+    need_intent = False
+
+    def _build_queries(self, kws: list[str]) -> list[tuple[str, str]]:
+        top = [k for k in (kws or []) if k][:6] or ["developer", "designer", "copywriter", "google ads"]
+        # Keep queries concise (under 18 words) so Google X-Ray returns maximum results
+        k1 = " OR ".join(f'"{k}"' for k in top[:3])
+        k2 = " OR ".join(f'"{k}"' for k in (top[3:6] if len(top) > 3 else top[:3]))
+
+        return [
+            # X / Twitter
+            ("x/xray", f'site:x.com ("looking for a" OR "need a" OR "hiring a") ({k1})'),
+            ("x/xray", f'site:x.com ("who can build" OR "anyone recommend" OR "dm your portfolio") ({k2})'),
+            # LinkedIn Posts
+            ("linkedin/xray", f'site:linkedin.com/posts ("looking for" OR "hiring" OR "freelance") ({k1})'),
+            ("linkedin/xray", f'site:linkedin.com/feed/update ("looking for" OR "hiring" OR "need a") ({k2})'),
+            # Facebook Public Posts & Groups
+            ("facebook/xray", f'site:facebook.com ("looking for a" OR "need someone" OR "anyone recommend") ({k1})'),
+            # Meta Threads (threads.net & threads.com)
+            ("threads/xray", f'(site:threads.net OR site:threads.com) ("looking for" OR "need a" OR "hiring") ({k1})'),
+            # Notion Briefs & Google Forms Applications
+            ("briefs/xray", f'(site:notion.site OR site:docs.google.com/forms) ("hiring" OR "looking for" OR "freelance") ({k1})'),
+            # Europe & LATAM Multilingual (Spanish, French, German, Portuguese)
+            ("global/europe-latam", f'(site:x.com OR site:linkedin.com/posts) ("busco" OR "necesito" OR "je cherche" OR "ich suche" OR "procuro") (developer OR designer OR freelancer OR web OR app OR marketing)'),
+            # China & Asia Multilingual
+            ("global/asia", f'(site:x.com OR site:v2ex.com OR site:threads.net) ("外包" OR "招募" OR "寻找开发" OR "远程" OR "hiring remote")'),
+        ]
+
+    async def _one_query(self, label: str, q: str, key: str) -> list[dict]:
+        r = await http.post(
+            "https://google.serper.dev/search",
+            headers={"X-API-KEY": key, "Content-Type": "application/json"},
+            json={"q": q, "num": 15, "tbs": os.getenv("SERPER_TBS", "qdr:w")},
+            timeout=18,
+        )
+        if r.status_code != 200:
+            raise RuntimeError(f"Serper {r.status_code}")
+        out = []
+        for it in r.json().get("organic", []):
+            link = it.get("link") or ""
+            title = clean(it.get("title") or "")
+            snippet = clean(it.get("snippet") or "")
+            if not link or not (title or snippet):
+                continue
+            author = ""
+            if "x.com/" in link or "twitter.com/" in link:
+                m_x = re.search(r"(?:x|twitter)\.com/([A-Za-z0-9_]{1,25})", link, re.I)
+                if m_x and m_x.group(1).lower() not in ("i", "search", "explore", "home", "hashtag"):
+                    author = f"@{m_x.group(1)}"
+            elif "threads." in link:
+                m_th = re.search(r"threads\.(?:net|com)/@?([A-Za-z0-9_.\-]{1,30})", link, re.I)
+                if m_th:
+                    author = f"@{m_th.group(1).lstrip('@')}"
+            elif "linkedin.com" in link:
+                author = title.split(" on LinkedIn")[0].split(" | ")[0].split(" - ")[0][:40]
+            elif "facebook.com" in link:
+                author = title.split(" - ")[0].split(" | ")[0][:40]
+            out.append({
+                "uid": f"srp:{link}",
+                "source": label,
+                "author": author,
+                "url": link,
+                "text": f"{title}\n{snippet}",
+                "posted_at": time.time(),
+                "trusted": True,
+            })
+        return out
+
+    async def fetch(self, kws):
+        key = os.getenv("SERPER_API_KEY", "").strip()
+        if not key:
+            return []
+        queries = self._build_queries(kws)
+        rs = await asyncio.gather(*[self._one_query(lbl, q, key) for lbl, q in queries], return_exceptions=True)
+        if all(isinstance(r, Exception) for r in rs):
+            raise rs[0]
+        return [p for r in rs if not isinstance(r, Exception) for p in r]
+
+
+class SocialWebXRay(Source):
+    """Free Zero-Key Social X-Ray Search across X, LinkedIn, Facebook & Meta Threads via DuckDuckGo HTML."""
+    name = "social_xray"
+    interval = 210
+    need_intent = False
+    RESULT_RE = re.compile(
+        r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>.*?'
+        r'<a[^>]+class="result__snippet"[^>]*>(.*?)</a>',
+        re.S | re.I,
+    )
+
+    def _queries(self, kws: list[str]) -> list[tuple[str, str]]:
+        top = [k for k in (kws or []) if k][:4] or ["developer", "designer", "copywriter"]
+        k_str = " OR ".join(f'"{k}"' for k in top[:3])
+        return [
+            ("x/web", f'site:x.com ("looking for a" OR "hiring a" OR "need a") ({k_str})'),
+            ("linkedin/web", f'site:linkedin.com/posts ("looking for" OR "hiring" OR "freelance") ({k_str})'),
+            ("facebook/web", f'site:facebook.com ("looking for a" OR "need someone" OR "hiring") ({k_str})'),
+            ("threads/web", f'site:threads.net ("looking for" OR "need a" OR "hiring") ({k_str})'),
+        ]
+
+    async def _one(self, label: str, q: str) -> list[dict]:
+        r = await http.post(
+            "https://html.duckduckgo.com/html/",
+            data={"q": q, "df": "w"},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=15,
+        )
+        if r.status_code != 200:
+            return []
+        out = []
+        for m in self.RESULT_RE.finditer(r.text):
+            raw_href, raw_title, raw_snip = m.group(1), m.group(2), m.group(3)
+            if "uddg=" in raw_href:
+                raw_href = unquote(raw_href.split("uddg=", 1)[1].split("&", 1)[0])
+            link = html.unescape(raw_href).strip()
+            if not link.startswith("http"):
+                continue
+            title = clean(raw_title)
+            snip = clean(raw_snip)
+            out.append({
+                "uid": f"ddg:{link}",
+                "source": label,
+                "author": "",
+                "url": link,
+                "text": f"{title}\n{snip}",
+                "posted_at": time.time(),
+                "trusted": True,
+            })
+        return out
+
+    async def fetch(self, kws):
+        rs = await asyncio.gather(*[self._one(lbl, q) for lbl, q in self._queries(kws)], return_exceptions=True)
+        return [p for r in rs if not isinstance(r, Exception) for p in r]
 
 
 class TelegramChannels(Source):
@@ -436,70 +613,6 @@ class Nairaland(Source):
         return [p for r in rs if not isinstance(r, Exception) for p in r]
 
 
-class SerperXRay(Source):
-    """Google X-Ray Search via Serper.dev (2,500 free queries on signup).
-    Finds high-intent buyer posts across X/Twitter, LinkedIn, Facebook, Threads, Notion briefs, Google Forms & more.
-    """
-    name = "serper"
-    interval = int(os.getenv("SERPER_INTERVAL", "600"))  # Every 10 mins to conserve free quota
-    need_intent = False  # Queries already embed buyer intent
-
-    def _build_queries(self, kws: list[str]) -> list[tuple[str, str]]:
-        top = [k for k in (kws or []) if k][:6] or ["developer", "copywriter", "google ads", "designer"]
-        kw_group = " OR ".join(f'"{k}"' for k in top[:4])
-        kw_group_2 = " OR ".join(f'"{k}"' for k in top[2:6]) if len(top) > 2 else kw_group
-
-        return [
-            ("serper/x", f'(site:x.com OR site:twitter.com) ("looking for a" OR "need a" OR "hiring a" OR "anyone recommend") ({kw_group})'),
-            ("serper/linkedin", f'site:linkedin.com/posts ("looking for" OR "hiring" OR "need a" OR "drop your portfolio") ({kw_group})'),
-            ("serper/facebook", f'site:facebook.com ("looking for a" OR "need someone" OR "hiring a" OR "recommendations for") ({kw_group})'),
-            ("serper/briefs", f'(site:notion.site OR site:docs.google.com/forms OR site:threads.net) ("hiring" OR "looking for" OR "application") ({kw_group_2})'),
-        ]
-
-    async def _one_query(self, label: str, q: str, key: str) -> list[dict]:
-        r = await http.post(
-            "https://google.serper.dev/search",
-            headers={"X-API-KEY": key, "Content-Type": "application/json"},
-            json={"q": q, "num": 15, "tbs": os.getenv("SERPER_TBS", "qdr:d")},
-            timeout=18,
-        )
-        if r.status_code != 200:
-            raise RuntimeError(f"Serper {r.status_code}")
-        out = []
-        for it in r.json().get("organic", []):
-            link = it.get("link") or ""
-            title = clean(it.get("title") or "")
-            snippet = clean(it.get("snippet") or "")
-            if not link or not (title or snippet):
-                continue
-            # Extract author hint from title or URL if possible
-            author = ""
-            m_x = re.search(r"(?:x|twitter)\.com/([A-Za-z0-9_]{1,25})", link, re.I)
-            if m_x and m_x.group(1).lower() not in ("i", "search", "explore", "home"):
-                author = f"@{m_x.group(1)}"
-            elif "linkedin.com" in link:
-                author = title.split(" on LinkedIn")[0].split(" | ")[0][:40]
-            out.append({
-                "uid": f"srp:{link}",
-                "source": label,
-                "author": author,
-                "url": link,
-                "text": f"{title}\n{snippet}",
-                "posted_at": time.time(),
-            })
-        return out
-
-    async def fetch(self, kws):
-        key = os.getenv("SERPER_API_KEY", "").strip()
-        if not key:
-            return []
-        queries = self._build_queries(kws)
-        rs = await asyncio.gather(*[self._one_query(lbl, q, key) for lbl, q in queries], return_exceptions=True)
-        if all(isinstance(r, Exception) for r in rs):
-            raise rs[0]
-        return [p for r in rs if not isinstance(r, Exception) for p in r]
-
-
 def _pick(d, keys):
     for k in keys:
         v = d.get(k)
@@ -553,7 +666,7 @@ def map_item(it, label):
 
 
 class ApifyActor(Source):
-    """Any Apify actor (LinkedIn, X, Facebook, Ad Libraries...). Only runs when APIFY_TOKEN is set."""
+    """Any Apify actor (LinkedIn, X, Facebook, Threads...). Only runs when APIFY_TOKEN is set."""
     need_intent = True
 
     def __init__(self, cfg):
@@ -562,13 +675,16 @@ class ApifyActor(Source):
         self.need_intent = cfg.get("need_intent", True)
 
     async def fetch(self, kws):
+        actor_raw = self.cfg.get("actor", "")
+        if not actor_raw or "PUT_" in actor_raw:
+            return []
         queries = [
             f"{i} {k}"
             for i in self.cfg.get("intents", ["looking for a", "i need a", "hiring a"])
             for k in (kws or [])[:int(self.cfg.get("max_keywords", 3))]
         ]
         body = _subst(self.cfg.get("input", {"query": "{query}"}), queries)
-        actor = self.cfg["actor"].replace("/", "~")
+        actor = actor_raw.replace("/", "~")
         token = os.getenv("APIFY_TOKEN") or os.getenv("APIFY_API_TOKEN") or ""
         r = await http.post(
             f"https://api.apify.com/v2/acts/{actor}/run-sync-get-dataset-items",
@@ -588,31 +704,41 @@ def apify_sources():
         cfgs = json.loads(os.getenv("APIFY_ACTORS", "[]"))
     except ValueError:
         return []
-    return [ApifyActor(c) for c in cfgs if c.get("actor") and c.get("name")]
+    return [
+        ApifyActor(c)
+        for c in cfgs
+        if c.get("actor") and c.get("name") and "PUT_" not in c.get("actor", "") and "SOME_PUBLIC_PAGE" not in json.dumps(c.get("input", {}))
+    ]
 
 
 def inactive():
     """Which optional sources/integrations are off and what turns them on (shown in the dashboard)."""
     off = {}
     if not os.getenv("SERPER_API_KEY"):
-        off["serper (Google X-Ray for X/LinkedIn/FB/Briefs)"] = "set SERPER_API_KEY (2,500 free searches)"
+        off["serper (Google X-Ray for X/LinkedIn/FB/Threads)"] = "set SERPER_API_KEY"
     if not (os.getenv("APIFY_TOKEN") or os.getenv("APIFY_API_TOKEN")):
         off["apify (LinkedIn/Facebook/X/Ads)"] = "set APIFY_TOKEN + APIFY_ACTORS"
     if not os.getenv("HUNTER_API_KEY"):
-        off["hunter.io (Email Enrichment)"] = "set HUNTER_API_KEY (25 free/mo)"
+        off["hunter.io (Email Enrichment)"] = "set HUNTER_API_KEY"
     if not os.getenv("SMTP_EMAIL"):
         off["smtp (Auto Email Dispatch)"] = "set SMTP_EMAIL + SMTP_APP_PASSWORD"
     if not os.getenv("X_BEARER_TOKEN"):
         off["x (Official API)"] = "set X_BEARER_TOKEN"
-    if not (envlist("TG_CHANNELS") or envlist("TG_JOB_CHANNELS")):
-        off["telegram (Channel Scraper)"] = "set TG_CHANNELS"
-    if not envlist("RSS_FEEDS"):
-        off["rss"] = "set RSS_FEEDS"
     return off
 
 
 def build_sources():
-    s = [HackerNews(), Reddit(), Bluesky(), Mastodon(), Freelancer(), Lemmy(), Nairaland()]
+    s = [
+        HackerNews(),
+        Reddit(),
+        Bluesky(),
+        Mastodon(),
+        Freelancer(),
+        Lemmy(),
+        Nairaland(),
+        V2EX(),
+        SocialWebXRay(),
+    ]
     if os.getenv("SERPER_API_KEY"):
         s.append(SerperXRay())
     if envlist("TG_CHANNELS") or envlist("TG_JOB_CHANNELS"):

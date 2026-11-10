@@ -1195,9 +1195,14 @@ async function loadStats() {
     }
 
     const sel = $('#srcSel');
-    if (sel.options.length <= 1) {
-      s.sources.forEach(src => sel.add(new Option(src, src)));
-    }
+    const prevVal = sel.value;
+    const listSrcs = s.ui_sources || s.sources || [];
+    const bySrc = s.by_source || {};
+    sel.innerHTML = '<option value="">All Sources</option>' + listSrcs.map(src => {
+      const cnt = bySrc[src] ? ` (${bySrc[src]})` : '';
+      return `<option value="${esc(src)}">${esc(src)}${cnt}</option>`;
+    }).join('');
+    sel.value = prevVal;
   } catch {
     $('#liveDot').classList.add('off');
     $('#liveText').textContent = 'offline';
